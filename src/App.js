@@ -1,8 +1,14 @@
 import React, { Component } from 'react';
 import logo from './logo.svg';
 import './App.css';
+import io from 'socket.io-client';
+
+const socket = io('http://localhost:9000');
 
 class App extends Component {
+  componentDidMount() {
+    socket.emit('clientEvent', 'Sent an event from the client!');
+  }
   render() {
     return (
       <div className="App">

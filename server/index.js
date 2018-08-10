@@ -1,36 +1,21 @@
-import express from 'express';
+var app = require('express')();
+var http = require('http').Server(app);
+var io = require('socket.io')(http);
 
-// we'll talk about this in a minute:
-import serverRenderer from './middleware/renderer';
+app.get('/', function(req, res) {
+   res.sendfile('server/index.html');
+});
 
-const PORT = 3000;
-const path = require('path');
+//Whenever someone connects this gets executed
+io.on('connection', function(socket) {
+   console.log('A user connected');
 
-// initialize the application and create the routes
-const app = express();
-const router = express.Router();
+   //Whenever someone disconnects this piece of code executed
+   socket.on('disconnect', function () {
+      console.log('A user disconnected');
+   });
+});
 
-// root (/) should always serve our server rendered page
-router.use('^/$', serverRenderer);
-
-// anything else should act as our index page
-// react-router will take care of everything
-router.use('*', serverRenderer);
-
-// other static resources should just be served as they are
-router.use(express.static(
-    path.resolve(__dirname, '..', 'build'),
-    { maxAge: '30d' },
-));
-
-// tell the app to use the above rules
-app.use(router);
-
-// start the app
-app.listen(PORT, (error) => {
-    if (error) {
-        return console.log('something bad happened', error);
-    }
-
-    console.log("listening on " + PORT + "...");
+http.listen(9000, function() {
+   console.log('listening on *:9000');
 });
