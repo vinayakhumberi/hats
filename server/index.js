@@ -1,29 +1,25 @@
 var app = require('express')();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
+var _ = require('lodash');
 
 app.get('/', function(req, res) {
    res.sendfile('server/index.html');
 });
 let clients = [];
-let requestedUser = '';
+let requestedTable = null;
 //Whenever someone connects this gets executed
 io.on('connection', function(socket) {
   console.log('A user connected');
+  socket.join("room-1");
   clients.push(socket.id);
-  console.log('List of Connected Users :', clients);
-  // setTimeout(function(){
-  //   console.log(clients);
-  //   if(clients.length > 1 && io.sockets.connected[clients[0]]) {
-  //     io.sockets.connected[clients[0]].emit("greeting", "Howdy, User 1!");
-  //   }
-  //   if(clients.length > 1 && io.sockets.connected[clients[1]]) {
-  //     io.sockets.connected[clients[1]].emit("greeting", "Howdy, User 2!");
-  //   }
-  // }, 5000);
 
+  console.log('List of Connected Users :', clients);
+
+  socket.on('computedResult',function(data) {
+    io.sockets.connected[data.requester].emit('result', data);
+  });
   socket.on('computePrime', function(packet) {
-    // console.log(packet);
     const range = packet.data.end - packet.data.start;
     const mod = range % clients.length;
     const manageableRange = range - mod;
@@ -40,11 +36,15 @@ io.on('connection', function(socket) {
         start = end;
       return crudeData;
     });
-    const requestTable = {
+    const mappedTable = _.keyBy(table, function(o) {
+      return o.id;
+    });
+    requestedTable = {
       requester: packet.id,
-      table: table,
+      table: mappedTable,
     }
-    console.log('Request Table', requestTable.table);
+    console.log('Request Table', requestedTable);
+    io.sockets.in("room-1").emit('findPrime', requestedTable);
   });
 
   socket.on('disconnect', function () {

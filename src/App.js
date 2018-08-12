@@ -18,13 +18,22 @@ class App extends Component {
       socketID = socket.id;
       console.log(socketID);
     });
-    socket.on('getPrime', ((data) => {
-      console.log(data);
-      for(let i = data.start; i <= data.end ; i++){
+    socket.on('findPrime', ((data) => {
+      const range = data.table[socketID];
+      const result = [];
+      for(let i = range.range.start; i <= range.range.end ; i++){
         if (isPrime(i)) {
-          console.log(i);
+          result.push(i);
         }
       }
+      socket.emit('computedResult', {
+        requester: data.requester,
+        id: socketID,
+        result
+      });
+    }));
+    socket.on('result', ((data) => {
+      console.log(data);
     }));
   }
   computePrime() {
