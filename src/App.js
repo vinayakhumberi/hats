@@ -5,9 +5,21 @@ import io from 'socket.io-client';
 
 const socket = io('http://localhost:9000');
 
+const isPrime = num => {
+  for(let i = 2, s = Math.sqrt(num); i <= s; i++)
+      if(num % i === 0) return false; 
+  return num !== 1;
+}
 class App extends Component {
   componentDidMount() {
-    socket.emit('clientEvent', 'Sent an event from the client!');
+    socket.on('getPrime', ((data) => {
+      console.log(data);
+      for(let i = data.start; i <= data.end ; i++){
+        if (isPrime(i)) {
+          console.log(i);
+        }
+      }
+    }));
   }
   render() {
     return (

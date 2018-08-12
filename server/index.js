@@ -8,12 +8,12 @@ app.get('/', function(req, res) {
 
 //Whenever someone connects this gets executed
 io.on('connection', function(socket) {
-   console.log('A user connected');
-
-   //Whenever someone disconnects this piece of code executed
-   socket.on('disconnect', function () {
-      console.log('A user disconnected');
-   });
+  console.log('A user connected');
+  socket.emit('getPrime', { start: 0, end: 100});
+  //Whenever someone disconnects this piece of code executed
+  socket.on('disconnect', function () {
+    console.log('A user disconnected');
+  });
 });
 
 http.listen(9000, function() {
