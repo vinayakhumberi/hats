@@ -1,19 +1,59 @@
 var app = require('express')();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
+var _ = require('lodash');
 
 app.get('/', function(req, res) {
    res.sendfile('server/index.html');
 });
-
+let clients = [];
+let requestedTable = null;
 //Whenever someone connects this gets executed
 io.on('connection', function(socket) {
-   console.log('A user connected');
+  console.log('A user connected');
+  socket.join("room-1");
+  clients.push(socket.id);
 
-   //Whenever someone disconnects this piece of code executed
-   socket.on('disconnect', function () {
-      console.log('A user disconnected');
-   });
+  console.log('List of Connected Users :', clients);
+
+  socket.on('computedResult',function(data) {
+    io.sockets.connected[data.requester].emit('result', data);
+  });
+  socket.on('computePrime', function(packet) {
+    const range = packet.data.end - packet.data.start;
+    const mod = range % clients.length;
+    const manageableRange = range - mod;
+    const microRangeSpan = manageableRange / clients.length;
+    let start = packet.data.start;
+    const table = clients.map((client) => {
+      const crudeData = {};
+      crudeData.id = client;
+      const end = start + microRangeSpan;
+      crudeData.range= {
+          'start': start,
+          'end': end,
+        };
+        start = end;
+      return crudeData;
+    });
+    const mappedTable = _.keyBy(table, function(o) {
+      return o.id;
+    });
+    requestedTable = {
+      requester: packet.id,
+      table: mappedTable,
+    }
+    console.log('Request Table', requestedTable);
+    io.sockets.in("room-1").emit('findPrime', requestedTable);
+  });
+
+  socket.on('disconnect', function () {
+    console.log('A user disconnected', socket.id);
+    const index = clients.indexOf(socket.id);
+    clients.splice(index, 1);
+    if(index > -1)
+    console.log('New List of Connected Users :', clients);
+  });
 });
 
 http.listen(9000, function() {
