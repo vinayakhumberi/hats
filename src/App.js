@@ -5,6 +5,8 @@ import io from 'socket.io-client';
 
 const socket = io('http://localhost:9000');
 
+let socketID = '';
+
 const isPrime = num => {
   for(let i = 2, s = Math.sqrt(num); i <= s; i++)
       if(num % i === 0) return false; 
@@ -12,6 +14,10 @@ const isPrime = num => {
 }
 class App extends Component {
   componentDidMount() {
+    socket.on('connect', () => {
+      socketID = socket.id;
+      console.log(socketID);
+    });
     socket.on('getPrime', ((data) => {
       console.log(data);
       for(let i = data.start; i <= data.end ; i++){
@@ -21,16 +27,27 @@ class App extends Component {
       }
     }));
   }
+  computePrime() {
+    const data = {
+      id: socketID,
+      data: {
+        start: 0,
+        end: 100,
+      }
+    }
+    socket.emit('computePrime', data);
+  }
   render() {
     return (
       <div className="App">
         <header className="App-header">
-          <img src={logo} className="App-logo" alt="logo" />
-          <h1 className="App-title">Welcome to React</h1>
+          <h1 className="App-title">Find Prime Numbers !</h1>
         </header>
-        <p className="App-intro">
-          To get started, edit <code>src/App.js</code> and save to reload.
-        </p>
+        <div className="body">
+          <button onClick={this.computePrime} >
+            ComputePrime
+          </button>
+        </div>
       </div>
     );
   }
