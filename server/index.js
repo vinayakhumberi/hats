@@ -7,7 +7,7 @@ app.get('/', function(req, res) {
    res.sendfile('server/index.html');
 });
 let clients = [];
-let requestedTable = null;
+let requestedTable = {};
 //Whenever someone connects this gets executed
 io.on('connection', function(socket) {
   console.log('A user connected');
@@ -17,7 +17,7 @@ io.on('connection', function(socket) {
   console.log('List of Connected Users :', clients);
 
   socket.on('computedResult',function(data) {
-    io.sockets.connected[data.requester].emit('result', data);
+    io.sockets.connected[data.requester].emit('result', data.result);
   });
   socket.on('computePrime', function(packet) {
     const range = packet.data.end - packet.data.start;
@@ -39,12 +39,14 @@ io.on('connection', function(socket) {
     const mappedTable = _.keyBy(table, function(o) {
       return o.id;
     });
-    requestedTable = {
+    requestedTable[packet.id] = {};
+    requestedTable[packet.id].result=[];
+    requestedTable[packet.id] = {
       requester: packet.id,
       table: mappedTable,
     }
-    console.log('Request Table', requestedTable);
-    io.sockets.in("room-1").emit('findPrime', requestedTable);
+    console.log('Request Table', requestedTable[packet.id]);
+    io.sockets.in("room-1").emit('findPrime', requestedTable[packet.id]);
   });
 
   socket.on('disconnect', function () {
